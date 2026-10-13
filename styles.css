@@ -181,6 +181,9 @@ body.menu-open{overflow:hidden}
 .pl-svc .txt{color:var(--ink)}
 .pl-svc .kick{color:var(--oak)}
 .svc-in{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.08fr);gap:clamp(28px,4.5vw,72px);align-items:center;justify-content:normal;padding:calc(var(--hdr) + 20px) 0 32px}
+/* чередование: кадр то справа, то слева от текста */
+.svc-flip .svc-in{grid-template-columns:minmax(0,1.08fr) minmax(0,1fr)}
+.svc-flip .dv-panel{order:-1}
 .pl-svc h2{font-size:clamp(36px,min(4.6vw,7.4svh),68px)}
 .pl-svc .lead{color:var(--ink2);font-size:clamp(16.5px,1.25vw,19px)}
 .dv-panel{position:relative;inset:auto;height:min(calc(100svh - var(--hdr) - 64px),780px);--s:24%;--seam:rgba(241,238,233,.85);border-radius:var(--rad);box-shadow:0 30px 60px -30px rgba(38,42,46,.35)}
