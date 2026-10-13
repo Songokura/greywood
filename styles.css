@@ -394,3 +394,16 @@ html:not(.js) .pw{--open:1}
 .vmod-x span+span{transform:rotate(-45deg)}
 @media (max-width:760px){.vmod-x{transform:none;top:8px;right:8px}}
 #ostrovki .dv-half img{--pos:50% 62%}
+.vmod.open{gap:20px}
+.vmod-nav{flex:0 0 auto;width:52px;height:52px;border-radius:50%;border:0;background:rgba(251,249,246,.92);color:var(--ink);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .2s cubic-bezier(.2,.8,.2,1)}
+.vmod-nav svg{display:block}
+@media (hover:hover){.vmod-nav:hover{transform:scale(1.06)}}
+.vmod-nav:active{transform:scale(.95)}
+.vmod-n{position:absolute;left:50%;bottom:-30px;transform:translateX(-50%);font:600 13px/1 var(--ft);letter-spacing:.08em;color:#CFCBC5}
+@media (max-width:760px){
+  .vmod{padding:16px 16px 72px}
+  .vmod-nav{position:absolute;bottom:14px;width:48px;height:48px}
+  .vmod-prev{left:calc(50% - 64px)}.vmod-next{left:calc(50% + 16px)}
+  .vmod video{height:min(74vh,860px)}
+  .vmod-n{display:none}
+}

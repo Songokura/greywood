@@ -28,7 +28,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Afacad:wght@700&family=Onest:wght@600;700&family=Source+Sans+3:wght@400;600&display=swap">
 <link rel="preload" as="image" href="assets/img/gw-hero-wide.webp" media="(min-width: 761px)" fetchpriority="high">
 <link rel="preload" as="image" href="assets/img/gw-hero-tall-2.webp" media="(max-width: 760px)" fetchpriority="high">
-<link rel="stylesheet" href="styles.css?v=20261013-1">
+<link rel="stylesheet" href="styles.css?v=20261013-2">
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -464,7 +464,9 @@
 </footer>
 
 <div class="vmod" id="vmod" role="dialog" aria-modal="true" aria-label="Видео объекта">
-  <div class="vmod-in"><video controls playsinline preload="none"></video><button class="vmod-x" type="button" aria-label="Закрыть видео"><span></span><span></span></button></div>
+  <button class="vmod-nav vmod-prev" type="button" aria-label="Предыдущее видео"><svg width="22" height="22" style="transform:scaleX(-1)"><use href="#ic-arr"/></svg></button>
+  <div class="vmod-in"><video controls playsinline preload="none"></video><button class="vmod-x" type="button" aria-label="Закрыть видео"><span></span><span></span></button><span class="vmod-n" aria-live="polite"></span></div>
+  <button class="vmod-nav vmod-next" type="button" aria-label="Следующее видео"><svg width="22" height="22"><use href="#ic-arr"/></svg></button>
 </div>
 
 <div class="sticky" id="sticky" aria-label="Быстрая связь">
@@ -473,6 +475,6 @@
   <a class="st-ig" href="https://www.instagram.com/grey_and_wood/" target="_blank" rel="noopener" aria-label="Instagram Grey & Wood"><svg width="20" height="20"><use href="#ic-ig"/></svg></a>
 </div>
 
-<script src="script.js?v=20261013-1" defer></script>
+<script src="script.js?v=20261013-2" defer></script>
 </body>
 </html>

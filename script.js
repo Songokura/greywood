@@ -267,33 +267,52 @@
   if (doc.readyState === "complete") start(); else W.addEventListener("load", start);
   update();
 
-  /* видео объектов: немая петля по видимости, полный ролик по клику */
+  /* видео объектов: превью только при наведении курсора, полный ролик по нажатию, листание в окне */
   var vcards = [].slice.call(doc.querySelectorAll(".vcard"));
-  if (vcards.length && "IntersectionObserver" in W && !REDUCED) {
-    var vio = new IntersectionObserver(function (ents) {
-      ents.forEach(function (en) {
-        var c = en.target, v = c.querySelector("video");
-        if (en.isIntersecting) {
-          if (!v.getAttribute("src")) { v.src = c.getAttribute("data-loop"); v.addEventListener("playing", function () { c.classList.add("is-live"); }, { once: true }); }
-          var p = v.play(); if (p && p.catch) p.catch(function () {});
-        } else if (v.getAttribute("src")) { v.pause(); }
-      });
-    }, { threshold: 0.55 });
-    vcards.forEach(function (c) { vio.observe(c); });
-  }
+  var HOVER = W.matchMedia("(hover: hover) and (pointer: fine)").matches;
+  if (HOVER && !REDUCED) vcards.forEach(function (c) {
+    var v = c.querySelector("video");
+    c.addEventListener("mouseenter", function () {
+      if (!v.getAttribute("src")) { v.src = c.getAttribute("data-loop"); v.addEventListener("playing", function () { c.classList.add("is-live"); }, { once: true }); }
+      var p = v.play(); if (p && p.catch) p.catch(function () {});
+    });
+    c.addEventListener("mouseleave", function () { v.pause(); });
+  });
   var vmod = doc.getElementById("vmod");
   if (vmod) {
-    var mv = vmod.querySelector("video"), lastCard = null;
+    var mv = vmod.querySelector("video"), cur = -1, lastCard = null;
+    var prevB = vmod.querySelector(".vmod-prev"), nextB = vmod.querySelector(".vmod-next"), cnt = vmod.querySelector(".vmod-n");
+    var show = function (i) {
+      cur = (i + vcards.length) % vcards.length;
+      var c = vcards[cur]; lastCard = c;
+      mv.src = c.getAttribute("data-full");
+      var p = mv.play(); if (p && p.catch) p.catch(function () {});
+      if (cnt) cnt.textContent = (cur + 1) + " / " + vcards.length;
+    };
     var closeV = function () { mv.pause(); mv.removeAttribute("src"); mv.load(); vmod.classList.remove("open"); doc.body.style.overflow = ""; if (lastCard) lastCard.focus({ preventScroll: true }); };
-    vcards.forEach(function (c) {
+    vcards.forEach(function (c, i) {
       c.addEventListener("click", function () {
-        lastCard = c; mv.src = c.getAttribute("data-full"); vmod.classList.add("open"); doc.body.style.overflow = "hidden";
-        var p = mv.play(); if (p && p.catch) p.catch(function () {});
+        c.querySelector("video").pause();
+        vmod.classList.add("open"); doc.body.style.overflow = "hidden"; show(i);
         vmod.querySelector(".vmod-x").focus({ preventScroll: true });
       });
     });
+    prevB.addEventListener("click", function () { show(cur - 1); });
+    nextB.addEventListener("click", function () { show(cur + 1); });
     vmod.querySelector(".vmod-x").addEventListener("click", closeV);
     vmod.addEventListener("click", function (e) { if (e.target === vmod) closeV(); });
-    doc.addEventListener("keydown", function (e) { if (e.key === "Escape" && vmod.classList.contains("open")) closeV(); });
+    doc.addEventListener("keydown", function (e) {
+      if (!vmod.classList.contains("open")) return;
+      if (e.key === "Escape") closeV();
+      if (e.key === "ArrowLeft") { e.preventDefault(); show(cur - 1); }
+      if (e.key === "ArrowRight") { e.preventDefault(); show(cur + 1); }
+    });
+    var sx = null, sy = 0;
+    vmod.addEventListener("touchstart", function (e) { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+    vmod.addEventListener("touchend", function (e) {
+      if (sx === null) return;
+      var dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy; sx = null;
+      if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) show(cur + (dx < 0 ? 1 : -1));
+    }, { passive: true });
   }
 })();
