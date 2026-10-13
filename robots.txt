@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://songokura.github.io/greywood/sitemap.xml
+Sitemap: https://greywood.kz/sitemap.xml
