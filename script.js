@@ -266,4 +266,34 @@
   if (doc.fonts && doc.fonts.ready) doc.fonts.ready.then(function () { fitText(); update(); });
   if (doc.readyState === "complete") start(); else W.addEventListener("load", start);
   update();
+
+  /* видео объектов: немая петля по видимости, полный ролик по клику */
+  var vcards = [].slice.call(doc.querySelectorAll(".vcard"));
+  if (vcards.length && "IntersectionObserver" in W && !REDUCED) {
+    var vio = new IntersectionObserver(function (ents) {
+      ents.forEach(function (en) {
+        var c = en.target, v = c.querySelector("video");
+        if (en.isIntersecting) {
+          if (!v.getAttribute("src")) { v.src = c.getAttribute("data-loop"); v.addEventListener("playing", function () { c.classList.add("is-live"); }, { once: true }); }
+          var p = v.play(); if (p && p.catch) p.catch(function () {});
+        } else if (v.getAttribute("src")) { v.pause(); }
+      });
+    }, { threshold: 0.55 });
+    vcards.forEach(function (c) { vio.observe(c); });
+  }
+  var vmod = doc.getElementById("vmod");
+  if (vmod) {
+    var mv = vmod.querySelector("video"), lastCard = null;
+    var closeV = function () { mv.pause(); mv.removeAttribute("src"); mv.load(); vmod.classList.remove("open"); doc.body.style.overflow = ""; if (lastCard) lastCard.focus({ preventScroll: true }); };
+    vcards.forEach(function (c) {
+      c.addEventListener("click", function () {
+        lastCard = c; mv.src = c.getAttribute("data-full"); vmod.classList.add("open"); doc.body.style.overflow = "hidden";
+        var p = mv.play(); if (p && p.catch) p.catch(function () {});
+        vmod.querySelector(".vmod-x").focus({ preventScroll: true });
+      });
+    });
+    vmod.querySelector(".vmod-x").addEventListener("click", closeV);
+    vmod.addEventListener("click", function (e) { if (e.target === vmod) closeV(); });
+    doc.addEventListener("keydown", function (e) { if (e.key === "Escape" && vmod.classList.contains("open")) closeV(); });
+  }
 })();
