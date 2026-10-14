@@ -37,6 +37,25 @@
     a.setAttribute("href", "https://wa.me/" + WA_NUM + "?text=" + encodeURIComponent(text));
   }, true);
 
+  /* ---------- Конверсии Google Ads: только на реальные действия, одна каждого вида за сессию, без ботов ---------- */
+  var human = false;
+  ["pointerdown", "touchstart", "keydown", "scroll", "wheel"].forEach(function (ev) {
+    W.addEventListener(ev, function () { human = true; }, { once: true, passive: true });
+  });
+  var ADS = { phone: "AW-18512685469/PTEECMPlx5wdEJ3TxPtE", form: "AW-18512685469/jqGkCNGV0ZwdEJ3TxPtE", contact: "AW-18512685469/um-bCLXnz5wdEJ3TxPtE" };
+  function adsConv(kind) {
+    if (typeof W.gtag !== "function" || navigator.webdriver || !human) return;
+    try { if (sessionStorage.getItem("gw_conv_" + kind)) return; sessionStorage.setItem("gw_conv_" + kind, "1"); } catch (err) {}
+    W.gtag("event", "conversion", { send_to: ADS[kind], value: 1.0, currency: "USD" });
+  }
+  W.addEventListener("click", function (e) {
+    var a = e.target && e.target.closest ? e.target.closest("a[href]") : null;
+    if (!a) return;
+    var h = a.getAttribute("href") || "";
+    if (/^tel:/i.test(h)) adsConv("phone");
+    else if (a.hasAttribute("data-wa") || /wa\.me|whatsapp|t\.me\/|^mailto:/i.test(h)) adsConv("contact");
+  }, true);
+
   /* ---------- fitText для первой строки заголовка героя ---------- */
   var h1 = doc.getElementById("h1");
   function fitText() {
@@ -242,6 +261,7 @@
       var lines = ["Заявка с сайта Grey & Wood", "Имя: " + name, "Телефон: " + phone];
       if (f.message.value.trim()) lines.push("Что нужно: " + f.message.value.trim());
       var url = "https://wa.me/" + WA_NUM + "?text=" + encodeURIComponent(lines.join("\n"));
+      adsConv("form");
       W.open(url, "_blank", "noopener");
       if (thanks) { thanks.hidden = false; try { thanks.focus({ preventScroll: true }); } catch (err) {} }
       form.reset();
