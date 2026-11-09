@@ -1,4 +1,4 @@
-/* Grey & Wood. Ванильный JS: плиты и соединение «ласточкин хвост», меню, якоря, лента, форма. */
+/* Grey & Wood. Ванильный JS: плиты и соединение «ласточкин хвост», меню, якоря, лента, заявка. */
 (function () {
   "use strict";
   var doc = document, root = doc.documentElement, W = window;
@@ -12,49 +12,17 @@
   var TOUCH = W.matchMedia("(pointer:coarse)").matches;
   var VW = W.innerWidth, VH = W.innerHeight;
 
-  /* ---------- WhatsApp: текст собирается в момент клика (фаза захвата на window, совместимо с LeadBot) ---------- */
-  var WA_NUM = "77788957867";
-  var WA = {
-    "default": "Здравствуйте! Пишу с сайта Grey & Wood. Интересует мебель для заведения.",
-    hero: "Здравствуйте! Пишу с сайта Grey & Wood. Нужна мебель для заведения: ",
-    bar: "Здравствуйте! Интересует барная зона. Формат заведения и размеры: ",
-    ostrovok: "Здравствуйте! Интересует торговый островок. Где стоит и размеры: ",
-    divan: "Здравствуйте! Интересуют диваны для зала. Размеры помещения: ",
-    stol: "Здравствуйте! Интересуют столики. Количество и размеры: ",
-    samoob: "Здравствуйте! Интересует зона самообслуживания. Что нужно: ",
-    stellazh: "Здравствуйте! Интересуют стеллажи из металла. Размеры и назначение: ",
-    loft: "Здравствуйте! Интересует лофт-мебель. Что нужно: ",
-    dizain: "Здравствуйте! Интересует дизайн интерьера заведения. Площадь и формат: ",
-    proizv: "Здравствуйте! Пишу с сайта Grey & Wood. Хочу обсудить проект заведения: ",
-    kontakty: "Здравствуйте! Пишу с сайта Grey & Wood. Хочу рассчитать мебель: ",
-    sticky: "Здравствуйте! Пишу с сайта Grey & Wood. Интересует мебель для заведения: "
-  };
-  W.addEventListener("click", function (e) {
-    var a = e.target && e.target.closest ? e.target.closest("a[data-wa]") : null;
-    if (!a) return;
-    var key = a.getAttribute("data-wa") || "default";
-    var text = WA[key] || WA["default"];
-    a.setAttribute("href", "https://wa.me/" + WA_NUM + "?text=" + encodeURIComponent(text));
-  }, true);
-
-  /* ---------- Конверсии Google Ads: только на реальные действия, одна каждого вида за сессию, без ботов ---------- */
+  /* ---------- Конверсия Google Ads: только принятая заявка, одна за сессию, без ботов ---------- */
   var human = false;
   ["pointerdown", "touchstart", "keydown", "scroll", "wheel"].forEach(function (ev) {
     W.addEventListener(ev, function () { human = true; }, { once: true, passive: true });
   });
-  var ADS = { phone: "AW-18512685469/PTEECMPlx5wdEJ3TxPtE", form: "AW-18512685469/jqGkCNGV0ZwdEJ3TxPtE", contact: "AW-18512685469/um-bCLXnz5wdEJ3TxPtE" };
+  var ADS = { form: "AW-18512685469/jqGkCNGV0ZwdEJ3TxPtE" };
   function adsConv(kind) {
     if (typeof W.gtag !== "function" || navigator.webdriver || !human) return;
     try { if (sessionStorage.getItem("gw_conv_" + kind)) return; sessionStorage.setItem("gw_conv_" + kind, "1"); } catch (err) {}
     W.gtag("event", "conversion", { send_to: ADS[kind], value: 1.0, currency: "USD" });
   }
-  W.addEventListener("click", function (e) {
-    var a = e.target && e.target.closest ? e.target.closest("a[href]") : null;
-    if (!a) return;
-    var h = a.getAttribute("href") || "";
-    if (/^tel:/i.test(h)) adsConv("phone");
-    else if (a.hasAttribute("data-wa") || /wa\.me|whatsapp|t\.me\/|^mailto:/i.test(h)) adsConv("contact");
-  }, true);
 
   /* ---------- fitText для первой строки заголовка героя ---------- */
   var h1 = doc.getElementById("h1");
@@ -245,28 +213,110 @@
     setTimeout(function () { rv.forEach(function (el) { if (!el.classList.contains("in") && el.getBoundingClientRect().top < W.innerHeight) el.classList.add("in"); }); }, 1500);
   } else rv.forEach(function (el) { el.classList.add("in"); });
 
-  /* ---------- Форма -> WhatsApp ---------- */
-  var form = doc.getElementById("form"), thanks = doc.getElementById("thanks"), ferr = doc.getElementById("ferr");
-  if (form) {
+  /* ---------- Формы -> LeadBot (заявка уходит в Telegram, без WhatsApp) ---------- */
+  var LB = "https://lead-bot.sultan-askarov-kz.workers.dev/e";
+  var TOPIC = {
+    hero: "", header: "", menu: "", sticky: "", proizv: "Проект заведения целиком",
+    bar: "Барная зона", ostrovok: "Торговый островок", divan: "Диваны", stol: "Столики",
+    samoob: "Зона самообслуживания", stellazh: "Стеллажи из металла", loft: "Лофт-мебель", dizain: "Дизайн интерьера"
+  };
+  var topic = "";
+  function sendLead(fields, f, section) {
+    if (W.LeadBot && W.LeadBot.submit) return W.LeadBot.submit(fields, { el: f, label: "Отправить заявку", section: section });
+    /* трекер не загрузился (блокировщик) - шлём сами, без источника визита */
+    if (!W.fetch) return Promise.resolve({ ok: false });
+    var body = JSON.stringify({ site: "greywood", type: "form", direct: 1, fields: fields, label: "Отправить заявку", section: section,
+      page: location.pathname + location.hash, lang: root.lang, ts: new Date().toISOString() });
+    return fetch(LB, { method: "POST", body: body, headers: { "content-type": "text/plain" } })
+      .then(function (r) { return { ok: r.ok }; }, function () { return { ok: false }; });
+  }
+  var SENT_KEY = "gw-lead-sent";
+  function markSent() { try { localStorage.setItem(SENT_KEY, "1"); } catch (e) {} }
+  function bindForm(form, section) {
+    if (!form) return;
+    var thanks = form.querySelector(".thanks"), ferr = form.querySelector(".ferr:not(.ffail)"), ffail = form.querySelector(".ffail");
     form.addEventListener("submit", function (e) {
       e.preventDefault();
-      var f = form.elements;
-      if (f.website && f.website.value) { form.hidden = true; if (thanks) thanks.hidden = false; return; }
+      var f = form.elements, btn = form.querySelector('[type="submit"]');
+      if (btn.disabled) return;
+      if (f.website && f.website.value) { if (thanks) thanks.hidden = false; return; }
       var name = f.name.value.trim(), phone = f.phone.value.trim();
       var badName = !name, badPhone = phone.replace(/\D/g, "").length < 10;
       f.name.classList.toggle("bad", badName); f.phone.classList.toggle("bad", badPhone);
       f.name.setAttribute("aria-invalid", badName ? "true" : "false"); f.phone.setAttribute("aria-invalid", badPhone ? "true" : "false");
       if (badName || badPhone) { if (ferr) ferr.hidden = false; (badName ? f.name : f.phone).focus(); return; }
       if (ferr) ferr.hidden = true;
-      var lines = ["Заявка с сайта Grey & Wood", "Имя: " + name, "Телефон: " + phone];
-      if (f.message.value.trim()) lines.push("Что нужно: " + f.message.value.trim());
-      var url = "https://wa.me/" + WA_NUM + "?text=" + encodeURIComponent(lines.join("\n"));
-      adsConv("form");
-      W.open(url, "_blank", "noopener");
-      if (thanks) { thanks.hidden = false; try { thanks.focus({ preventScroll: true }); } catch (err) {} }
-      form.reset();
+      if (ffail) ffail.hidden = true;
+      var fields = { name: name, phone: phone, "Интересует": section === "popup" ? topic : "", message: f.message.value.trim() };
+      for (var k in fields) if (!fields[k]) delete fields[k];
+      btn.disabled = true;
+      sendLead(fields, form, section).then(function (r) {
+        btn.disabled = false;
+        if (r && r.ok) {
+          adsConv("form"); markSent(); form.reset();
+          form.classList.add("sent");
+          if (thanks) { thanks.hidden = false; try { thanks.focus({ preventScroll: true }); } catch (err) {} }
+        } else if (ffail) ffail.hidden = false;
+      });
     });
   }
+  bindForm(doc.getElementById("form"), "zayavka");
+  bindForm(doc.getElementById("mform"), "popup");
+
+  /* ---------- Окно заявки: все кнопки сайта открывают его ---------- */
+  var lm = doc.getElementById("lm"), lmTopic = lm ? lm.querySelector(".lm-topic") : null, lmOpener = null;
+  function openLm(key, opener) {
+    if (!lm || typeof lm.showModal !== "function") { goTo("zayavka"); return; }
+    if (lm.open) return;
+    setMenu(false);
+    topic = TOPIC[key] || "";
+    if (lmTopic) { lmTopic.hidden = !topic; lmTopic.querySelector("b").textContent = topic; }
+    var mf = doc.getElementById("mform");
+    if (mf && mf.classList.contains("sent") && key !== "auto") {
+      mf.classList.remove("sent"); var th = mf.querySelector(".thanks"); if (th) th.hidden = true;
+    }
+    lmOpener = opener || null;
+    lm.showModal();
+    root.classList.add("lm-open");
+    try { sessionStorage.setItem("gw-lm-shown", "1"); } catch (e) {}
+  }
+  if (lm) {
+    lm.addEventListener("close", function () { root.classList.remove("lm-open"); if (lmOpener) try { lmOpener.focus({ preventScroll: true }); } catch (e) {} });
+    lm.querySelector(".lm-x").addEventListener("click", function () { lm.close(); });
+    /* клик по затемнению вокруг окна закрывает его */
+    lm.addEventListener("click", function (e) { if (e.target === lm) lm.close(); });
+  }
+  doc.addEventListener("click", function (e) {
+    var b = e.target && e.target.closest ? e.target.closest("[data-lm]") : null;
+    if (!b) return;
+    e.preventDefault();
+    openLm(b.getAttribute("data-lm"), b);
+  });
+
+  /* Через 20 секунд окно предлагается само: один раз за визит, не после принятой заявки
+     и не тогда, когда человек заполняет форму, листает меню или смотрит видео */
+  (function autoLm() {
+    if (!lm) return;
+    var skip = false;
+    try { skip = localStorage.getItem(SENT_KEY) === "1" || sessionStorage.getItem("gw-lm-shown") === "1"; } catch (e) {}
+    if (skip) return;
+    var tries = 0, zay = doc.getElementById("form");
+    function busy() {
+      var a = doc.activeElement;
+      if (a && /INPUT|SELECT|TEXTAREA/.test(a.tagName)) return true;
+      if (doc.body.classList.contains("menu-open")) return true;
+      var vm = doc.getElementById("vmod"); if (vm && vm.classList.contains("open")) return true;
+      if (zay) { var r = zay.getBoundingClientRect(); if (r.top < W.innerHeight * 0.8 && r.bottom > W.innerHeight * 0.2) return true; }
+      return false;
+    }
+    function tick() {
+      var sent = false; try { sent = localStorage.getItem(SENT_KEY) === "1"; } catch (e) {}
+      if (sent || lm.open || doc.hidden) { if (!sent && !lm.open && ++tries < 24) setTimeout(tick, 5000); return; }
+      if (busy()) { if (++tries < 24) setTimeout(tick, 5000); return; }
+      openLm("auto");
+    }
+    setTimeout(tick, 20000);
+  })();
 
   var year = doc.getElementById("year"); if (year) year.textContent = String(new Date().getFullYear());
 
